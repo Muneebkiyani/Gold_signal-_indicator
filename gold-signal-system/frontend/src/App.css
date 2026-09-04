@@ -1308,11 +1308,13 @@
   box-sizing: border-box;
   transition: border-color 150ms ease, background 150ms ease;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .settings-input::-webkit-outer-spin-button,
 .settings-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .settings-input:focus {

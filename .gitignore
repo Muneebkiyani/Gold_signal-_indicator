@@ -1,0 +1,27 @@
+# Environment / Secrets
+.env
+*.env
+**/.env
+**/*.env
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Database
+data/*.db
+data/*.db-shm
+data/*.db-wal
+**/data/*.db
+
+# OS
+.DS_Store
