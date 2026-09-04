@@ -16,9 +16,11 @@ import type {
   UpdateSettingsRequest,
 } from '../types/api'
 
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api'
+const rawBase = import.meta.env.VITE_API_URL?.trim()
+const apiHost = rawBase
+  ? (rawBase.startsWith('http') ? rawBase : `https://${rawBase}`).replace(/\/+$/, '')
+  : ''
+const API_BASE = apiHost ? `${apiHost}/api` : '/api'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

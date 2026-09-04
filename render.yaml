@@ -1,0 +1,47 @@
+services:
+  # ── Backend Web Service (FastAPI) ──────────────────────────────────────────
+  - type: web
+    name: gold-signal-backend
+    runtime: python
+    rootDir: gold-signal-system/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: DATA_PROVIDER_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_ENABLED
+        value: "true"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: SYMBOL
+        value: "XAUUSD"
+      - key: TIMEFRAME
+        value: "M15"
+      - key: POLL_INTERVAL_SECONDS
+        value: "60"
+
+  # ── Frontend Static Site (React + Vite) ────────────────────────────────────
+  - type: web
+    name: gold-signal-frontend
+    runtime: static
+    rootDir: gold-signal-system/frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: gold-signal-backend
+          property: host

@@ -104,9 +104,11 @@ export function useTradingData(pollIntervalMs = 12000) {
     const connectSSE = () => {
       if (!mountedRef.current) return
 
-      const streamUrl = import.meta.env.VITE_API_URL
-        ? `${import.meta.env.VITE_API_URL}/api/stream`
-        : '/api/stream'
+      const rawApi = import.meta.env.VITE_API_URL?.trim()
+      const normalizedApi = rawApi
+        ? (rawApi.startsWith('http') ? rawApi : `https://${rawApi}`).replace(/\/+$/, '')
+        : ''
+      const streamUrl = normalizedApi ? `${normalizedApi}/api/stream` : '/api/stream'
 
       const es = new EventSource(streamUrl)
       eventSourceRef.current = es
