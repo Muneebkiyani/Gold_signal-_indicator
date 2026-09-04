@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  # ── Backend API ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gold-signal-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data        # persist SQLite database
+    env_file:
+      - ./backend/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ── Frontend ──────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gold-signal-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  db_data:
+
+# NOTE: Dockerfiles are not created in Phase 1.
+# Add them in a later phase once the application is stable.
+# For local development, run backend and frontend directly (see README.md).

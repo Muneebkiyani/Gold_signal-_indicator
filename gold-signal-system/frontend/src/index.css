@@ -1,0 +1,101 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   XAUUSD Gold Signal System — Global CSS
+   Design tokens, resets, typography, and utility classes.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Color palette */
+  --color-bg:           #090912;
+  --color-surface:      #0f0f1e;
+  --color-surface-2:    #16162a;
+  --color-border:       rgba(245, 158, 11, 0.15);
+  --color-border-glow:  rgba(245, 158, 11, 0.4);
+
+  /* Gold accent */
+  --color-gold:         #f59e0b;
+  --color-gold-light:   #fcd34d;
+  --color-gold-dark:    #b45309;
+  --color-gold-muted:   rgba(245, 158, 11, 0.12);
+
+  /* Signal colors */
+  --color-buy:          #10b981;
+  --color-sell:         #ef4444;
+  --color-neutral:      #6b7280;
+
+  /* Text */
+  --color-text-primary:   #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     #475569;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-gold: 0 0 40px rgba(245, 158, 11, 0.15);
+  --shadow-gold-sm: 0 0 12px rgba(245, 158, 11, 0.2);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Utility Classes ────────────────────────────────────────────────────────── */
+.text-gold    { color: var(--color-gold); }
+.text-muted   { color: var(--color-text-muted); }
+.text-secondary { color: var(--color-text-secondary); }
+.font-mono    { font-family: var(--font-mono); }
+
+.flex         { display: flex; }
+.flex-col     { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.gap-2        { gap: var(--space-2); }
+.gap-4        { gap: var(--space-4); }

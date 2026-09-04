@@ -1,0 +1,29 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Data validation
+pydantic==2.10.1
+pydantic-settings==2.6.1
+
+# Database  (SQLModel 0.0.21 supports Python 3.9)
+sqlalchemy==2.0.36
+sqlmodel==0.0.21
+aiosqlite==0.20.0
+
+# HTTP client
+httpx==0.27.2
+
+# Environment
+python-dotenv==1.0.1
+
+# Utilities
+python-dateutil==2.9.0
+pytz==2024.2
+
+# Logging
+loguru==0.7.2
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
