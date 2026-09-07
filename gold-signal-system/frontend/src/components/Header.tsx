@@ -1,6 +1,7 @@
 import React from 'react'
 import type { StatusResponse } from '../types/api'
 import type { StreamConnectionStatus } from '../hooks/useTradingData'
+import type { NextSignalCountdown } from '../hooks/useNextSignalCountdown'
 
 export type ActivePage = 'dashboard' | 'settings'
 
@@ -12,6 +13,7 @@ interface HeaderProps {
   onRefresh: () => void
   activePage: ActivePage
   onNavigate: (page: ActivePage) => void
+  countdown?: NextSignalCountdown
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
   activePage,
   onNavigate,
+  countdown,
 }) => {
   const getMarketStatusBadge = () => {
     const raw = status?.market_data_status || ''
@@ -162,6 +165,19 @@ export const Header: React.FC<HeaderProps> = ({
       </nav>
 
       <div className="header-right">
+        {/* Next Signal Countdown Pill */}
+        {countdown && (
+          <div
+            className={`status-pill status-pill-countdown ${countdown.isClose ? 'status-pill-urgent' : ''}`}
+            title={`Next M15 candle closes at ${countdown.formattedTargetTime} (${countdown.formattedTargetTimeLocal})`}
+          >
+            <span className="dot dot-gold" />
+            <span className="countdown-pill-text">
+              Next Signal in: <strong className="font-mono">{countdown.formattedTime}</strong>
+            </span>
+          </div>
+        )}
+
         {/* Market Hours Status */}
         {getMarketStatusBadge()}
 

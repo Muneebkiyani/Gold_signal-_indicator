@@ -1,14 +1,17 @@
 import React from 'react'
 import type { IndicatorsResponse, SignalCurrentResponse } from '../types/api'
+import type { NextSignalCountdown } from '../hooks/useNextSignalCountdown'
 
 interface PineScriptStatusHUDProps {
   currentSignal: SignalCurrentResponse | null
   indicators: IndicatorsResponse | null
+  countdown?: NextSignalCountdown
 }
 
 export const PineScriptStatusHUD: React.FC<PineScriptStatusHUDProps> = ({
   currentSignal,
   indicators,
+  countdown,
 }) => {
   const adxVal = indicators?.ADX ?? indicators?.adx ?? null
   const rsiVal = indicators?.RSI ?? indicators?.rsi ?? null
@@ -55,15 +58,23 @@ export const PineScriptStatusHUD: React.FC<PineScriptStatusHUDProps> = ({
           <span className="pine-script-badge">Pine Script v5</span>
           <span className="pine-hud-title">LIVE STRATEGY MATRIX</span>
         </div>
-        <div className={`pine-zone-pill ${isNoEntry ? 'zone-noentry' : 'zone-active'}`}>
-          <span className="zone-dot" />
-          {isNoEntry ? (
-            <span>
-              NO ENTRY: {isWeakTrend && isRsiExtreme ? 'Choppy + RSI Extreme' : isWeakTrend ? 'Choppy (ADX < 20)' : 'RSI Exhaustion'}
-            </span>
-          ) : (
-            <span>CLEAR TRADING ZONE</span>
+        <div className="pine-hud-header-right">
+          {countdown && (
+            <div className="pine-next-bar-badge font-mono" title={`Target: ${countdown.formattedTargetTime}`}>
+              <span className="mini-clock-label">Next Bar:</span>
+              <span className="mini-clock-val text-gold">{countdown.formattedTime}</span>
+            </div>
           )}
+          <div className={`pine-zone-pill ${isNoEntry ? 'zone-noentry' : 'zone-active'}`}>
+            <span className="zone-dot" />
+            {isNoEntry ? (
+              <span>
+                NO ENTRY: {isWeakTrend && isRsiExtreme ? 'Choppy + RSI Extreme' : isWeakTrend ? 'Choppy (ADX < 20)' : 'RSI Exhaustion'}
+              </span>
+            ) : (
+              <span>CLEAR TRADING ZONE</span>
+            )}
+          </div>
         </div>
       </div>
 

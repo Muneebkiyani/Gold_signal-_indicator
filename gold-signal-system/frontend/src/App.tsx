@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useTradingData } from './hooks/useTradingData'
+import { useNextSignalCountdown } from './hooks/useNextSignalCountdown'
 import { Header } from './components/Header'
 import type { ActivePage } from './components/Header'
 import { SignalHeroCard } from './components/SignalHeroCard'
@@ -31,6 +32,14 @@ function App() {
     refresh,
   } = useTradingData(6000)
 
+  // Auto-refresh data when a new M15 bar closes
+  const handleCandleClose = useCallback(() => {
+    refresh()
+  }, [refresh])
+
+  // Live countdown to next M15 bar close (auto-triggers refresh at candle boundary)
+  const countdown = useNextSignalCountdown(15, handleCandleClose)
+
   // ── Loading skeleton (only on initial load, not on page switch) ────────────
   if (isLoading && !status && !market) {
     return (
@@ -49,7 +58,7 @@ function App() {
       {/* Background ambient lighting */}
       <div className="ambient-glow" aria-hidden="true" />
 
-      {/* Main Header & Navigation */}
+      {/* Main Header & Navigation — includes countdown pill */}
       <Header
         status={status}
         streamStatus={streamStatus}
@@ -58,6 +67,7 @@ function App() {
         onRefresh={refresh}
         activePage={activePage}
         onNavigate={setActivePage}
+        countdown={countdown}
       />
 
       {/* ── Settings Page ─────────────────────────────────────────────────── */}
@@ -89,10 +99,12 @@ function App() {
               currentSignal={currentSignal}
               currentPrice={market?.price ?? null}
               indicators={indicators}
+              countdown={countdown}
             />
             <PineScriptStatusHUD
               currentSignal={currentSignal}
               indicators={indicators}
+              countdown={countdown}
             />
           </div>
 

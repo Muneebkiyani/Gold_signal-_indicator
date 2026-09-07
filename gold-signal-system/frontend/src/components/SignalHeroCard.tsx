@@ -1,16 +1,19 @@
 import React from 'react'
 import type { SignalCurrentResponse, IndicatorsResponse } from '../types/api'
+import type { NextSignalCountdown } from '../hooks/useNextSignalCountdown'
 
 interface SignalHeroCardProps {
   currentSignal: SignalCurrentResponse | null
   currentPrice: number | null
   indicators: IndicatorsResponse | null
+  countdown?: NextSignalCountdown
 }
 
 export const SignalHeroCard: React.FC<SignalHeroCardProps> = ({
   currentSignal,
   currentPrice,
   indicators,
+  countdown,
 }) => {
   const signalType = (currentSignal?.signal || 'WAIT').toUpperCase()
   const priceVal = currentSignal?.price ?? currentPrice
@@ -97,6 +100,43 @@ export const SignalHeroCard: React.FC<SignalHeroCardProps> = ({
         </div>
       </div>
 
+      {/* ── NEXT SIGNAL COUNTDOWN STRIP ── */}
+      {countdown && (
+        <div className={`hero-countdown-strip ${countdown.isClose ? 'countdown-urgent' : ''}`}>
+          <div className="countdown-left-col">
+            <div className="countdown-title-wrap">
+              <span className="countdown-live-dot" />
+              <span className="countdown-badge-title">NEXT SIGNAL IN</span>
+            </div>
+            <div className="countdown-timer-display font-mono">
+              <span className="countdown-clock-val">{countdown.formattedTime}</span>
+              <span className="countdown-unit-tag">M15 Bar</span>
+            </div>
+          </div>
+
+          <div className="countdown-middle-col">
+            <div className="countdown-target-line">
+              <span className="target-label">Next Signal Time:</span>
+              <span className="target-val font-mono text-gold">
+                {countdown.formattedTargetTime}
+              </span>
+              <span className="target-local">({countdown.formattedTargetTimeLocal} Local)</span>
+            </div>
+            <div className="countdown-progress-container">
+              <div className="countdown-progress-track">
+                <div
+                  className="countdown-progress-fill"
+                  style={{ width: `${countdown.progressPct}%` }}
+                />
+              </div>
+              <span className="countdown-pct-label font-mono">
+                {Math.round(countdown.progressPct)}% candle elapsed
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <p className="hero-signal-desc">{meta.subtext}</p>
 
       {/* Conditions Checklist based on Pine Script rules */}
@@ -172,6 +212,14 @@ export const SignalHeroCard: React.FC<SignalHeroCardProps> = ({
           <span className="condition-name">Bar Close:</span>
           <span className="condition-val font-mono">{candleTime}</span>
         </div>
+
+        {/* Next Signal Evaluation */}
+        {countdown && (
+          <div className="hero-condition-item next-signal-chip">
+            <span className="condition-name">Next Signal:</span>
+            <span className="condition-val text-gold font-mono">in {countdown.formattedTime}</span>
+          </div>
+        )}
       </div>
     </section>
   )

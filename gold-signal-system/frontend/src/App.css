@@ -2018,3 +2018,230 @@
   color: #f1f5f9;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXT SIGNAL COUNTDOWN — Header Pill
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.status-pill-countdown {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.35);
+  color: #e9c46a;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.status-pill-urgent {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  animation: urgency-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes urgency-pulse {
+  from { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  to   { box-shadow: 0 0 12px 3px rgba(239, 68, 68, 0.35); }
+}
+
+.dot-gold {
+  background: #d4af37;
+  box-shadow: 0 0 8px #d4af37;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.countdown-pill-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.countdown-pill-text strong {
+  color: #fbbf24;
+  font-size: 0.88rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXT SIGNAL COUNTDOWN — Hero Card Strip
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.hero-countdown-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 0.75rem 0;
+  padding: 0.9rem 1.25rem;
+  background: rgba(212, 175, 55, 0.07);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  transition: all 300ms ease;
+}
+
+.hero-countdown-strip.countdown-urgent {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  animation: urgency-pulse 0.9s ease-in-out infinite alternate;
+}
+
+.countdown-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 110px;
+}
+
+.countdown-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.countdown-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d4af37;
+  box-shadow: 0 0 8px #d4af37;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.countdown-badge-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #94a3b8;
+}
+
+.countdown-timer-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.countdown-clock-val {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: -1px;
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+}
+
+.hero-countdown-strip.countdown-urgent .countdown-clock-val {
+  color: #f87171;
+  text-shadow: 0 0 20px rgba(248, 113, 113, 0.4);
+}
+
+.countdown-unit-tag {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding-bottom: 0.2rem;
+}
+
+.countdown-middle-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.countdown-target-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.target-label {
+  font-size: 0.77rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.target-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.target-local {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.countdown-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.countdown-progress-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.countdown-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4af37 0%, #f59e0b 60%, #fbbf24 100%);
+  border-radius: 9999px;
+  transition: width 1s linear;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+.hero-countdown-strip.countdown-urgent .countdown-progress-fill {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.countdown-pct-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: right;
+}
+
+/* Inline "Next Signal" chip in conditions row */
+.next-signal-chip .condition-val {
+  font-size: 0.9rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXT SIGNAL COUNTDOWN — Pine Script Status HUD
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.pine-hud-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pine-next-bar-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 0.3rem 0.75rem;
+  border-radius: 8px;
+}
+
+.mini-clock-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.mini-clock-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.45);
+}
+
