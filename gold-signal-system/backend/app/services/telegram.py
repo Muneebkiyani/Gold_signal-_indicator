@@ -9,16 +9,91 @@ Retry policy: up to 3 attempts with exponential back-off (2 s, 4 s).
 """
 
 import asyncio
+import http.client
+import json
 import logging
-from typing import Optional, Tuple
-
-import httpx
+import socket
+from typing import Any, Dict, Optional, Tuple
 
 from app.config import get_settings
 from app.models.enums import SignalType
 from app.models.signal import Signal
 
 logger = logging.getLogger(__name__)
+
+
+# ── IPv4-only HTTP helper ──────────────────────────────────────────────────────
+# anyio's async TCP stack resolves addresses independently of socket.getaddrinfo
+# patches, so we use a synchronous http.client approach (run in a thread) that
+# explicitly requests AF_INET to avoid broken IPv6 routes on some networks.
+
+def _ipv4_addrs(host: str, port: int) -> list:
+    """Return AF_INET socket addresses for *host*:*port* only."""
+    return [
+        res[4]
+        for res in socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)
+    ]
+
+
+def _sync_telegram_request(
+    token: str,
+    endpoint: str,
+    payload: Optional[Dict[str, Any]] = None,
+    timeout: float = 10.0,
+    base_url: str = "https://api.telegram.org",
+) -> Dict[str, Any]:
+    """
+    Synchronous Telegram Bot API request.
+    If using api.telegram.org, explicitly forces an IPv4 TCP socket to bypass
+    broken IPv6 routes. If using a reverse proxy (e.g. Cloudflare Worker),
+    connects directly to the proxy host over standard HTTPS/HTTP.
+    """
+    import urllib.parse
+    import ssl as _ssl
+
+    parsed = urllib.parse.urlparse(base_url.rstrip("/"))
+    host = parsed.hostname or "api.telegram.org"
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    base_path = parsed.path.rstrip("/")
+    path = f"{base_path}/bot{token}/{endpoint}"
+
+    method = "POST" if payload is not None else "GET"
+    body: Optional[bytes] = None
+    headers: Dict[str, str] = {}
+    if payload is not None:
+        body = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+        headers["Content-Length"] = str(len(body))
+
+    if host == "api.telegram.org":
+        # Force IPv4 socket for direct api.telegram.org to bypass IPv6 blackholes
+        addrs = socket.getaddrinfo(host, 443, socket.AF_INET, socket.SOCK_STREAM)
+        if not addrs:
+            raise ConnectionError(f"Could not resolve {host} to an IPv4 address")
+        ipv4_addr = addrs[0][4]
+
+        raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        raw_sock.settimeout(timeout)
+        raw_sock.connect(ipv4_addr)
+
+        ctx = _ssl.create_default_context()
+        ssl_sock = ctx.wrap_socket(raw_sock, server_hostname=host)
+
+        conn = http.client.HTTPSConnection(host, 443, timeout=timeout)
+        conn.sock = ssl_sock
+    else:
+        # Custom reverse proxy (e.g., Cloudflare Worker)
+        if parsed.scheme == "http":
+            conn = http.client.HTTPConnection(host, port, timeout=timeout)
+        else:
+            conn = http.client.HTTPSConnection(host, port, timeout=timeout)
+
+    conn.request(method, path, body=body, headers=headers)
+    response = conn.getresponse()
+    raw_text = response.read().decode("utf-8")
+    conn.close()
+    return json.loads(raw_text)
+
 
 
 class TelegramService:
@@ -29,7 +104,7 @@ class TelegramService:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.base_url = (
-            f"https://api.telegram.org/bot{self.settings.telegram_bot_token}"
+            f"{self.settings.telegram_api_base_url.rstrip('/')}/bot{self.settings.telegram_bot_token}"
         )
 
     # ── Message Formatting ────────────────────────────────────────────────────
@@ -123,7 +198,8 @@ class TelegramService:
 
     async def _send_request(self, text: str) -> None:
         """
-        POST a message to the Telegram Bot API.
+        POST a message to the Telegram Bot API via a thread-pool executor.
+        Uses an IPv4-only http.client connection to avoid broken IPv6 TLS routes.
         Retries up to _MAX_ATTEMPTS times with exponential back-off.
         Raises the final exception if all attempts fail.
         """
@@ -134,30 +210,35 @@ class TelegramService:
             return
 
         payload = {"chat_id": self.settings.telegram_chat_id, "text": text}
+        token = self.settings.telegram_bot_token
 
-        async with httpx.AsyncClient() as client:
-            for attempt in range(1, self._MAX_ATTEMPTS + 1):
-                try:
-                    response = await client.post(
-                        f"{self.base_url}/sendMessage",
-                        json=payload,
-                        timeout=10.0,
-                    )
-                    response.raise_for_status()
-                    return
-                except (httpx.RequestError, httpx.HTTPStatusError) as exc:
-                    if attempt == self._MAX_ATTEMPTS:
-                        raise
-                    wait_secs = 2 ** attempt
-                    logger.warning(
-                        "Telegram send failed (attempt %d/%d): %s. "
-                        "Retrying in %ds...",
-                        attempt,
-                        self._MAX_ATTEMPTS,
-                        exc,
-                        wait_secs,
-                    )
-                    await asyncio.sleep(wait_secs)
+        base_url = self.settings.telegram_api_base_url
+        for attempt in range(1, self._MAX_ATTEMPTS + 1):
+            try:
+                data = await asyncio.to_thread(
+                    _sync_telegram_request,
+                    token,
+                    "sendMessage",
+                    payload,
+                    10.0,
+                    base_url,
+                )
+                if not data.get("ok"):
+                    raise RuntimeError(f"Telegram API error: {data.get('description')})")
+                return
+            except Exception as exc:
+                if attempt == self._MAX_ATTEMPTS:
+                    raise
+                wait_secs = 2 ** attempt
+                logger.warning(
+                    "Telegram send failed (attempt %d/%d): %s. "
+                    "Retrying in %ds...",
+                    attempt,
+                    self._MAX_ATTEMPTS,
+                    exc,
+                    wait_secs,
+                )
+                await asyncio.sleep(wait_secs)
 
     async def send_message(self, text: str) -> Tuple[bool, Optional[str]]:
         """
@@ -177,27 +258,29 @@ class TelegramService:
     async def test_connection(self) -> bool:
         """
         Call the Telegram ``getMe`` endpoint to verify that the bot token is
-        valid and the API is reachable. Returns True on success.
+        valid and the API is reachable.
+        Returns True on success.
         """
         if not self.settings.telegram_bot_token:
             logger.warning("Telegram bot token is not configured.")
             return False
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{self.base_url}/getMe",
-                    timeout=10.0,
+            data = await asyncio.to_thread(
+                _sync_telegram_request,
+                self.settings.telegram_bot_token,
+                "getMe",
+                None,
+                10.0,
+                self.settings.telegram_api_base_url,
+            )
+            if data.get("ok"):
+                logger.info(
+                    "Telegram bot connected: @%s",
+                    data["result"]["username"],
                 )
-                response.raise_for_status()
-                data = response.json()
-                if data.get("ok"):
-                    logger.info(
-                        "Telegram bot connected: @%s",
-                        data["result"]["username"],
-                    )
-                    return True
-                return False
+                return True
+            return False
         except Exception as exc:  # pylint: disable=broad-except
             logger.error("Telegram connectivity test failed: %s", exc)
             return False

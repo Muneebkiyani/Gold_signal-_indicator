@@ -74,10 +74,22 @@ for i in {1..15}; do
 done
 
 # 3. Start Frontend
-echo "• Starting Frontend (Vite on :5173)..."
+echo "• Starting Frontend (port :5173)..."
 cd "$FRONTEND_DIR"
-npm run dev -- --host 0.0.0.0 --port 5173 &
-FRONTEND_PID=$!
+if command -v npm >/dev/null 2>&1; then
+    npm run dev -- --host 0.0.0.0 --port 5173 &
+    FRONTEND_PID=$!
+elif [ -f "$FRONTEND_DIR/serve_frontend.py" ]; then
+    echo "  → Node/npm not found. Serving pre-built dashboard + API proxy on :5173 ✅"
+    python3 "$FRONTEND_DIR/serve_frontend.py" >/dev/null 2>&1 &
+    FRONTEND_PID=$!
+elif [ -d "$FRONTEND_DIR/dist" ]; then
+    echo "  → Serving pre-built dashboard on :5173 ✅"
+    python3 -m http.server 5173 --directory "$FRONTEND_DIR/dist" >/dev/null 2>&1 &
+    FRONTEND_PID=$!
+else
+    echo "  ⚠️ Warning: Neither npm nor frontend/dist found."
+fi
 
 sleep 2
 

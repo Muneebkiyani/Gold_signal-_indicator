@@ -213,6 +213,50 @@
   background: #64748b;
 }
 
+.dot-warning {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.status-pill-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+.market-closed-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  margin-bottom: 1.25rem;
+  color: #fde68a;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.market-closed-icon {
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.market-closed-content {
+  line-height: 1.45;
+}
+
+.market-closed-content strong {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.market-closed-sub {
+  color: #94a3b8;
+  font-size: 0.8125rem;
+}
+
 .refresh-container {
   display: flex;
   align-items: center;
@@ -1583,3 +1627,394 @@
     justify-content: center;
   }
 }
+
+/* ── Pine Script Status HUD Matrix ─────────────────────────────────────────── */
+.pine-hud-card {
+  border-radius: 20px;
+  padding: 1.5rem;
+  background: #0f1422;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.pine-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pine-hud-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pine-script-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: var(--font-mono, monospace);
+}
+
+.pine-hud-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #f1f5f9;
+  text-transform: uppercase;
+}
+
+.pine-zone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.zone-noentry {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.zone-noentry .zone-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.zone-active {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.zone-active .zone-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.pine-hud-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .pine-hud-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pine-hud-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.35rem;
+  transition: all 150ms ease;
+}
+
+.pine-hud-cell:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.hud-cell-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.hud-cell-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.hud-cell-sub {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pine-hud-cell.hud-buy {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+.pine-hud-cell.hud-buy .hud-cell-val {
+  color: #34d399;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.pine-hud-cell.hud-sell {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+.pine-hud-cell.hud-sell .hud-cell-val {
+  color: #f87171;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.pine-hud-cell.hud-noentry {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+.pine-hud-cell.hud-noentry .hud-cell-val {
+  color: #fbbf24;
+}
+
+.pine-hud-cell.hud-wait {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+.pine-hud-cell.hud-wait .hud-cell-val {
+  color: #38bdf8;
+}
+
+.pine-hud-cell.trend-up .hud-cell-val {
+  color: #34d399;
+}
+.pine-hud-cell.trend-down .hud-cell-val {
+  color: #f87171;
+}
+.pine-hud-cell.trend-weak .hud-cell-val {
+  color: #94a3b8;
+}
+
+/* ── Hero Top Row & Price Display ─────────────────────────────────────────── */
+.hero-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.hero-signal-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.hero-price-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.hero-price-caption {
+  font-size: 0.725rem;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.hero-price-val {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 24px rgba(245, 158, 11, 0.25);
+  line-height: 1;
+}
+
+.hero-signal-desc {
+  color: #cbd5e1;
+  font-size: 0.925rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Hero Conditions Checklist ───────────────────────────────────────────── */
+.hero-conditions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero-condition-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.825rem;
+}
+
+.condition-name {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.condition-val {
+  font-weight: 700;
+}
+
+.candle-time-item {
+  margin-left: auto;
+}
+
+/* ── Compact Indicator Grid ───────────────────────────────────────────────── */
+.market-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+/* EMA Values Row */
+.ema-values-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.ema-val-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ema-sub-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.text-aqua {
+  color: #06b6d4;
+}
+
+.text-orange {
+  color: #f97316;
+}
+
+.ema-val-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* RSI Gauge */
+.rsi-gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.rsi-gauge-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.rsi-gauge-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 300ms ease, background 300ms ease;
+}
+
+.rsi-marker-30 {
+  position: absolute;
+  left: 30%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.rsi-marker-50 {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.rsi-marker-70 {
+  position: absolute;
+  left: 70%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.rsi-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: #64748b;
+  font-family: var(--font-mono, monospace);
+}
+
+/* DMI Metrics Row */
+.di-metrics-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.di-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.di-label {
+  font-weight: 700;
+}
+
+.di-val {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+

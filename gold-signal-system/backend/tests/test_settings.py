@@ -63,7 +63,18 @@ class TestGetSettings:
         assert data["sma_length"] == 81
         assert data["atr_length"] == 14
 
-    def test_signal_defaults(self, client: TestClient):
+    def test_signal_defaults(self, client: TestClient, monkeypatch, tmp_path):
+        # pydantic-settings reads the .env file directly, bypassing os.environ.
+        # Point model_config's env_file to a non-existent path so the real .env
+        # is skipped and we exercise the in-code field defaults.
+        dummy_env = tmp_path / ".env"
+        dummy_env.write_text("")
+        monkeypatch.setattr(
+            "app.config.Settings.model_config",
+            {**__import__("app.config", fromlist=["Settings"]).Settings.model_config,
+             "env_file": str(dummy_env)},
+        )
+        get_settings.cache_clear()
         data = client.get("/api/settings").json()
         assert data["signal_on_close"] is True
         assert data["telegram_enabled"] is False

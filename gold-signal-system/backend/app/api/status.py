@@ -16,6 +16,7 @@ from app.api.schemas import StatusResponse
 from app.config import get_settings
 from app.crud.candle import get_latest_candle
 from app.database import get_db
+from app.market.market_hours import is_gold_market_open
 from app.services.scheduler import SignalScheduler
 
 logger = logging.getLogger(__name__)
@@ -55,16 +56,19 @@ async def get_status(
     else:
         telegram_status = "misconfigured"
 
+    market_open, market_reason = is_gold_market_open()
+
     # 3. Scheduler & Signal Engine Status
-    signal_engine_status = "idle"
-    market_data_status = "ready"
+    provider_label = "MT5 Direct Feed" if settings.data_provider.lower() == "mt5" else "connected"
+    signal_engine_status = "idle" if market_open else f"idle ({market_reason})"
+    market_data_status = provider_label if market_open else f"{provider_label} ({market_reason})"
     last_processed_candle = None
     last_market_update = None
 
     if scheduler is not None:
         if scheduler._task is not None and not scheduler._task.done():
-            signal_engine_status = "running"
-            market_data_status = "connected"
+            signal_engine_status = "running" if market_open else f"idle ({market_reason})"
+            market_data_status = provider_label if market_open else f"{provider_label} ({market_reason})"
         else:
             signal_engine_status = "stopped"
 

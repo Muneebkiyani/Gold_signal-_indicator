@@ -9,7 +9,6 @@ Covers:
 """
 
 import pytest
-import httpx
 from datetime import datetime, timezone
 from unittest.mock import patch, AsyncMock, MagicMock
 
@@ -183,34 +182,38 @@ def test_format_no_entry_allowed_when_enabled(telegram_service):
 
 @pytest.mark.asyncio
 async def test_send_message_success(telegram_service):
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
-
+    """send_message returns (True, None) when _sync_telegram_request succeeds."""
+    mock_result = {"ok": True, "result": {"message_id": 42}}
+    with patch(
+        "app.services.telegram._sync_telegram_request",
+        return_value=mock_result,
+    ) as mock_req:
         success, error = await telegram_service.send_message("Hello")
 
         assert success is True
         assert error is None
-        mock_post.assert_called_once()
-        _, kwargs = mock_post.call_args
-        assert kwargs["json"]["text"] == "Hello"
-        assert kwargs["json"]["chat_id"] == "TEST_CHAT"
+        mock_req.assert_called_once()
+        # Verify call args: token, endpoint, payload
+        args = mock_req.call_args[0]
+        assert args[1] == "sendMessage"
+        assert args[2]["text"] == "Hello"
+        assert args[2]["chat_id"] == "TEST_CHAT"
 
 
 @pytest.mark.asyncio
 async def test_send_message_retries_then_fails(telegram_service):
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_post.side_effect = httpx.RequestError(
-            "Network Error", request=MagicMock()
-        )
+    """send_message retries 3× and returns (False, error) on persistent failure."""
+    with patch(
+        "app.services.telegram._sync_telegram_request",
+        side_effect=OSError("Network Error"),
+    ) as mock_req:
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
             success, error = await telegram_service.send_message("Hello")
 
             assert success is False
             assert "Network Error" in error
             # 3 total attempts
-            assert mock_post.call_count == 3
+            assert mock_req.call_count == 3
             # 2 sleeps (between attempt 1→2 and 2→3)
             assert mock_sleep.call_count == 2
 
@@ -219,22 +222,23 @@ async def test_send_message_retries_then_fails(telegram_service):
 
 @pytest.mark.asyncio
 async def test_connection_success(telegram_service):
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.return_value = None
-        mock_resp.json.return_value = {"ok": True, "result": {"username": "goldbot"}}
-        mock_get.return_value = mock_resp
-
+    """test_connection returns True when the bot token is valid."""
+    mock_result = {"ok": True, "result": {"username": "goldbot"}}
+    with patch(
+        "app.services.telegram._sync_telegram_request",
+        return_value=mock_result,
+    ):
         result = await telegram_service.test_connection()
         assert result is True
 
 
 @pytest.mark.asyncio
 async def test_connection_failure(telegram_service):
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.side_effect = httpx.HTTPStatusError(
-            "401 Unauthorized", request=MagicMock(), response=MagicMock()
-        )
+    """test_connection returns False when _sync_telegram_request raises."""
+    with patch(
+        "app.services.telegram._sync_telegram_request",
+        side_effect=OSError("401 Unauthorized"),
+    ):
         result = await telegram_service.test_connection()
         assert result is False
 

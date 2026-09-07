@@ -143,3 +143,144 @@ async def get_indicators(
         sma_81=vals.sma_81,
         atr=vals.atr,
     )
+
+
+# ── MT5 Live Data Integration Endpoints ───────────────────────────────────────
+
+from datetime import datetime
+from pydantic import BaseModel, Field
+
+
+class MT5CandleIn(BaseModel):
+    symbol: str = Field("XAUUSD", description="Symbol e.g. XAUUSD")
+    timeframe: str = Field("M15", description="Timeframe e.g. M15")
+    timestamp: datetime = Field(..., description="Candle open timestamp (ISO or UTC)")
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float = 0.0
+
+
+class MT5HistoryIn(BaseModel):
+    symbol: str = Field("XAUUSD", description="Symbol e.g. XAUUSD")
+    timeframe: str = Field("M15", description="Timeframe e.g. M15")
+    candles: List[MT5CandleIn]
+
+
+@router.post(
+    "/market/candle",
+    summary="Push live candle from MT5",
+    description="Receives completed candles directly from MetaTrader 5 Expert Advisor.",
+)
+async def push_mt5_candle(
+    candle_in: MT5CandleIn,
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+):
+    settings = get_settings()
+    scheduler = _get_scheduler(request)
+
+    normalized = NormalizedCandle(
+        timestamp=candle_in.timestamp,
+        open=candle_in.open,
+        high=candle_in.high,
+        low=candle_in.low,
+        close=candle_in.close,
+        volume=candle_in.volume,
+    )
+
+    signals_generated = []
+    signal_svc = scheduler._signal_service if scheduler is not None else getattr(request.app.state, "signal_service", None)
+    if signal_svc is None:
+        from app.services.signal_service import SignalService
+        signal_svc = SignalService()
+        await signal_svc.initialize(session)
+        request.app.state.signal_service = signal_svc
+
+    signals_generated = await signal_svc.evaluate([normalized], session)
+
+    try:
+        from app.services.broadcaster import get_broadcaster
+
+        broadcaster = get_broadcaster()
+        engine = IndicatorEngine()
+        history = signal_svc._engine.candle_manager.candles
+        vals = engine.calculate(history) if history else None
+
+        payload = {
+            "market": {
+                "symbol": candle_in.symbol,
+                "timeframe": candle_in.timeframe,
+                "price": candle_in.close,
+                "timestamp": candle_in.timestamp.isoformat(),
+            },
+            "status": {
+                "system_status": "operational",
+                "market_data_status": "connected (MT5 Direct Feed)",
+                "telegram_status": "enabled" if settings.telegram_enabled else "disabled",
+                "signal_engine_status": "running",
+            },
+        }
+        if vals:
+            payload["indicators"] = {
+                "EMA9": vals.ema_fast,
+                "EMA21": vals.ema_slow,
+                "RSI": vals.rsi,
+                "ADX": vals.adx,
+                "DI+": vals.di_plus,
+                "DI-": vals.di_minus,
+                "SMA81": vals.sma_81,
+                "ATR": vals.atr,
+            }
+        await broadcaster.publish("candle_update", payload)
+    except Exception as exc:
+        logger.error("SSE broadcast error: %s", exc)
+
+    return {
+        "ok": True,
+        "symbol": candle_in.symbol,
+        "timestamp": candle_in.timestamp,
+        "close": candle_in.close,
+        "signals_generated": len(signals_generated),
+    }
+
+
+@router.post(
+    "/market/history",
+    summary="Push historical candles from MT5",
+    description="Backfills historical candle bars from MetaTrader 5 on initial EA attach.",
+)
+async def push_mt5_history(
+    history_in: MT5HistoryIn,
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+):
+    scheduler = _get_scheduler(request)
+    normalized_list = [
+        NormalizedCandle(
+            timestamp=c.timestamp,
+            open=c.open,
+            high=c.high,
+            low=c.low,
+            close=c.close,
+            volume=c.volume,
+        )
+        for c in history_in.candles
+    ]
+
+    signal_svc = scheduler._signal_service if scheduler is not None else getattr(request.app.state, "signal_service", None)
+    if signal_svc is None:
+        from app.services.signal_service import SignalService
+        signal_svc = SignalService()
+        await signal_svc.initialize(session)
+        request.app.state.signal_service = signal_svc
+
+    if normalized_list:
+        await signal_svc.evaluate(normalized_list, session)
+
+    return {
+        "ok": True,
+        "count": len(normalized_list),
+        "message": f"Successfully ingested {len(normalized_list)} historical MT5 candles",
+    }

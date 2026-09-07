@@ -16,6 +16,7 @@ async def main():
     print(f"Telegram Enabled: {settings.telegram_enabled}")
     print(f"Bot Token Configured: {'YES (masked)' if settings.telegram_bot_token else 'NO'}")
     print(f"Chat ID Configured: {settings.telegram_chat_id if settings.telegram_chat_id else 'NO'}")
+    print(f"Telegram Base URL: {settings.telegram_api_base_url}")
     print("-" * 60)
 
     if not settings.telegram_bot_token:

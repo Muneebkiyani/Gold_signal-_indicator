@@ -3,10 +3,9 @@ import { useTradingData } from './hooks/useTradingData'
 import { Header } from './components/Header'
 import type { ActivePage } from './components/Header'
 import { SignalHeroCard } from './components/SignalHeroCard'
-import { TrendCard } from './components/TrendCard'
+import { PineScriptStatusHUD } from './components/PineScriptStatusHUD'
 import { MarketCardsGrid } from './components/MarketCardsGrid'
 import { SignalHistoryTable } from './components/SignalHistoryTable'
-import { SafetyBanner } from './components/SafetyBanner'
 import { SettingsPage } from './pages/SettingsPage'
 import './App.css'
 
@@ -36,22 +35,11 @@ function App() {
   if (isLoading && !status && !market) {
     return (
       <div className="trading-app">
-        <div className="ambient-glow" aria-hidden="true" />
-        <Header
-          status={status}
-          streamStatus={streamStatus}
-          isRefreshing={isRefreshing}
-          lastUpdated={lastUpdated}
-          onRefresh={refresh}
-          activePage={activePage}
-          onNavigate={setActivePage}
-        />
-        <main className="dashboard-content">
-          <div className="loading-container">
-            <div className="loading-spinner" aria-hidden="true" />
-            <p className="loading-text">Connecting to XAUUSD Signal System...</p>
-          </div>
-        </main>
+        <div className="loading-screen" role="status" aria-label="Loading Gold Signal System">
+          <div className="loading-spinner" />
+          <p className="loading-text">CONNECTING TO GOLD MARKET DATA...</p>
+          <span className="loading-subtext">Initializing Pine Script Strategy & Indicators</span>
+        </div>
       </div>
     )
   }
@@ -61,7 +49,7 @@ function App() {
       {/* Background ambient lighting */}
       <div className="ambient-glow" aria-hidden="true" />
 
-      {/* Top Header with navigation */}
+      {/* Main Header & Navigation */}
       <Header
         status={status}
         streamStatus={streamStatus}
@@ -74,48 +62,47 @@ function App() {
 
       {/* ── Settings Page ─────────────────────────────────────────────────── */}
       {activePage === 'settings' && (
-        <main className="dashboard-content" id="settings-main">
-          <SettingsPage />
-        </main>
+        <SettingsPage />
       )}
 
       {/* ── Dashboard Page ────────────────────────────────────────────────── */}
       {activePage === 'dashboard' && (
         <main className="dashboard-content" id="dashboard-main">
-          {/* Offline Warning if backend is not reachable */}
+          {/* Offline alert (only if backend unreachable) */}
           {!isOnline && (
             <div className="offline-alert" role="alert">
               <span className="offline-icon">⚠️</span>
               <div className="offline-message">
-                <strong>Backend Offline:</strong> Unable to connect to the FastAPI signal
-                service at <code>http://localhost:8000/api</code>.
+                <strong>Backend Offline:</strong> Unable to reach signal service at{' '}
+                <code>http://localhost:8000/api</code>.
                 {error && <span className="offline-detail"> ({error})</span>}
               </div>
               <button type="button" className="btn-retry" onClick={refresh}>
-                Retry Connection
+                Retry
               </button>
             </div>
           )}
 
-          {/* Hero Section: Active Signal + Trend Filter */}
+          {/* Section 1: Hero Signal Command Center + Pine Script HUD */}
           <div className="hero-signals-row">
             <SignalHeroCard
               currentSignal={currentSignal}
               currentPrice={market?.price ?? null}
+              indicators={indicators}
             />
-            <TrendCard
-              trend={currentSignal?.trend ?? null}
+            <PineScriptStatusHUD
+              currentSignal={currentSignal}
               indicators={indicators}
             />
           </div>
 
-          {/* Market Indicators Grid */}
+          {/* Section 2: Core Pine Script Indicator Metrics */}
           <MarketCardsGrid
             market={market}
             indicators={indicators}
           />
 
-          {/* Signal History Table */}
+          {/* Section 3: Verified Signals Log */}
           <SignalHistoryTable
             signals={signalsHistory}
             total={totalSignals}
@@ -123,21 +110,18 @@ function App() {
             pageSize={pageSize}
             onPageChange={setPage}
           />
-
-          {/* Mandatory Safety Notice */}
-          <SafetyBanner />
         </main>
       )}
 
-      {/* Trading Dashboard Footer */}
+      {/* Streamlined Trading Footer */}
       <footer className="dashboard-footer">
         <div className="footer-left">
-          <span>XAUUSD Gold Signal Alert System • v1.0.0</span>
+          <span>XAUUSD Gold Signal System • M15 Strategy</span>
           <span className="footer-separator">•</span>
           <span>Pine Script Rules (EMA 9/21, RSI 14, ADX 14, SMA 81)</span>
         </div>
         <div className="footer-right">
-          <span>Informational only — No automated execution</span>
+          <span>Manual execution only — Alerts dispatched via Telegram</span>
         </div>
       </footer>
     </div>

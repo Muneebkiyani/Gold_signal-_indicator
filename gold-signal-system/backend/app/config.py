@@ -79,6 +79,11 @@ class Settings(BaseSettings):
     )
 
     # ── Market Data Provider ──────────────────────────────────────────────────
+    data_provider: str = Field(
+        "twelvedata",
+        description="Active market data provider: twelvedata | mt5 | mock",
+        alias="DATA_PROVIDER",
+    )
     data_provider_api_key: str = Field(
         "",
         description="API key for the market data provider — KEEP SECRET",
@@ -101,6 +106,11 @@ class Settings(BaseSettings):
         description="Telegram chat/channel ID to receive alerts",
         alias="TELEGRAM_CHAT_ID",
     )
+    telegram_api_base_url: str = Field(
+        "https://api.telegram.org",
+        description="Base URL for Telegram Bot API or reverse proxy",
+        alias="TELEGRAM_API_BASE_URL",
+    )
     telegram_enabled: bool = Field(
         False,
         description="Enable Telegram alert dispatch",
@@ -109,6 +119,16 @@ class Settings(BaseSettings):
         False,
         description="Suppress 'no entry' informational Telegram messages",
         alias="NO_ENTRY_TELEGRAM_ALERTS",
+    )
+    enforce_market_hours: bool = Field(
+        True,
+        description="Only generate and alert signals during official Gold market trading hours",
+        alias="ENFORCE_MARKET_HOURS",
+    )
+    only_alert_live_candles: bool = Field(
+        True,
+        description="Only send Telegram alerts for live recent candles (suppress historical replay alerts)",
+        alias="ONLY_ALERT_LIVE_CANDLES",
     )
 
     # ── Instrument ────────────────────────────────────────────────────────────

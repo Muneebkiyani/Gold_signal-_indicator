@@ -23,6 +23,25 @@ export const Header: React.FC<HeaderProps> = ({
   activePage,
   onNavigate,
 }) => {
+  const getMarketStatusBadge = () => {
+    const raw = status?.market_data_status || ''
+    const isClosed = raw.toLowerCase().includes('closed')
+    if (isClosed) {
+      return (
+        <div className="status-pill status-pill-warning" title={raw}>
+          <span className="dot dot-warning" />
+          <span>Market: Closed (Weekend)</span>
+        </div>
+      )
+    }
+    return (
+      <div className="status-pill status-pill-success" title="Spot Gold interbank market is open">
+        <span className="dot dot-success" />
+        <span>Market: Open</span>
+      </div>
+    )
+  }
+
   const getTelegramStatusBadge = () => {
     const tg = status?.telegram_status
     if (tg === 'enabled') {
@@ -143,6 +162,9 @@ export const Header: React.FC<HeaderProps> = ({
       </nav>
 
       <div className="header-right">
+        {/* Market Hours Status */}
+        {getMarketStatusBadge()}
+
         {/* Telegram Status */}
         {getTelegramStatusBadge()}
 

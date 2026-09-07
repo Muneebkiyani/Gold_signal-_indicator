@@ -360,6 +360,35 @@ class MockXAUUSDProvider(BaseMarketDataProvider):
         pass
 
 
+class MT5PushProvider(BaseMarketDataProvider):
+    """
+    Inbound MT5 Provider.
+    Live candles are delivered via POST /api/market/candle by the MT5 Expert Advisor.
+    Background polling is a no-op since candles arrive via live push from MetaTrader 5.
+    """
+
+    async def get_latest_price(self, symbol: str) -> float:
+        return 0.0
+
+    async def get_historical_candles(
+        self,
+        symbol: str = "XAUUSD",
+        timeframe: str = "M15",
+        limit: int = 100,
+    ) -> Sequence[NormalizedCandle]:
+        return []
+
+    async def get_latest_candle(
+        self,
+        symbol: str = "XAUUSD",
+        timeframe: str = "M15",
+    ) -> Optional[NormalizedCandle]:
+        return None
+
+    async def close(self) -> None:
+        pass
+
+
 # ─── Factory ──────────────────────────────────────────────────────────────────
 
 def get_market_provider(
@@ -368,13 +397,16 @@ def get_market_provider(
 ) -> BaseMarketDataProvider:
     """
     Factory to construct the active market data provider.
-    Allows easy switching between TwelveData and Mock providers.
+    Supports TwelveData, MT5 (direct broker push), and Mock providers.
     """
     settings = get_settings()
-    name = (provider_name or "twelvedata").lower()
+    name = (provider_name or settings.data_provider).lower()
 
     if name == "mock":
         return MockXAUUSDProvider()
+
+    if name == "mt5":
+        return MT5PushProvider()
 
     # Default to Twelve Data
     key = api_key or settings.data_provider_api_key

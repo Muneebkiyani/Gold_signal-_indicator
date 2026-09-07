@@ -32,6 +32,7 @@ from app.crud.signal import (
 )
 from app.market.base_provider import BaseMarketDataProvider
 from app.market.candle_manager import M15CandleManager
+from app.market.market_hours import is_gold_market_open, is_live_candle
 from app.market.models import NormalizedCandle
 from app.models.enums import SignalType
 from app.models.signal import Signal
@@ -147,6 +148,20 @@ class SignalEngine:
                 )
                 return []
 
+        # Step 2.5: Real Market Hours Check
+        settings = get_settings()
+        if settings.enforce_market_hours:
+            market_open, reason = is_gold_market_open(completed_candle.timestamp)
+            if not market_open:
+                logger.info(
+                    "[%s] %s for candle %s. Suppressing signal generation.",
+                    self.symbol,
+                    reason,
+                    completed_candle.timestamp.isoformat(),
+                )
+                self.last_evaluated_candle_time = completed_candle.timestamp
+                return []
+
         # Step 3: Run strategy evaluation over current candle history
         strategy_signals: list[StrategySignal] = evaluate_strategies(
             candles=self.candle_manager.candles,
@@ -173,19 +188,30 @@ class SignalEngine:
                 # Step 6: Insert into DB with duplicate protection
                 saved = await create_signal(session, db_model, ignore_duplicates=True)
 
-                # Step 7: Send Telegram Alert
-                if get_settings().telegram_enabled:
-                    msg_text = self.telegram_service.format_signal(saved)
-                    if msg_text:
-                        success, error_msg = await self.telegram_service.send_message(
-                            msg_text
-                        )
-                        saved = await update_telegram_status(
-                            session=session,
-                            signal_id=saved.id,
-                            sent=success,
-                            error=error_msg
-                        )
+                # Step 7: Send Telegram Alert (only for live candles during market hours)
+                if settings.telegram_enabled:
+                    can_alert = True
+                    if settings.only_alert_live_candles:
+                        if not is_live_candle(completed_candle.timestamp, max_age_minutes=30):
+                            can_alert = False
+                            logger.info(
+                                "[%s] Candle %s is historical (>30m old). Suppressed Telegram alert.",
+                                self.symbol,
+                                completed_candle.timestamp.isoformat(),
+                            )
+
+                    if can_alert:
+                        msg_text = self.telegram_service.format_signal(saved)
+                        if msg_text:
+                            success, error_msg = await self.telegram_service.send_message(
+                                msg_text
+                            )
+                            saved = await update_telegram_status(
+                                session=session,
+                                signal_id=saved.id,
+                                sent=success,
+                                error=error_msg
+                            )
 
                 persisted_signals.append(saved)
                 logger.info(

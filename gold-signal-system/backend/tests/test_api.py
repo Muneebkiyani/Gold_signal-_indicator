@@ -95,9 +95,9 @@ async def test_api_status_default(api_client):
     data = resp.json()
     assert data["system_status"] in ("operational", "degraded")
     assert data["database_status"] == "connected"
-    assert data["market_data_status"] in ("ready", "connected")
+    assert any(data["market_data_status"].startswith(prefix) for prefix in ("ready", "connected", "MT5"))
     assert data["telegram_status"] in ("disabled", "enabled", "misconfigured")
-    assert data["signal_engine_status"] in ("idle", "running", "stopped")
+    assert any(data["signal_engine_status"].startswith(prefix) for prefix in ("idle", "running", "stopped"))
 
 
 # ── Market Endpoint ───────────────────────────────────────────────────────────
@@ -384,3 +384,64 @@ async def test_api_put_settings_validation_errors(api_client):
     )
     assert resp2.status_code == 422
     assert "RSI oversold" in resp2.json()["detail"]
+
+
+# ── MT5 Bridge Ingestion Endpoints ───────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_api_post_mt5_candle(api_client):
+    client, _ = api_client
+    payload = {
+        "symbol": "XAUUSD",
+        "timeframe": "M15",
+        "timestamp": "2026-09-06T12:00:00Z",
+        "open": 2500.0,
+        "high": 2505.5,
+        "low": 2498.0,
+        "close": 2503.2,
+        "volume": 1250.0,
+    }
+    resp = await client.post("/api/market/candle", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["symbol"] == "XAUUSD"
+    assert data["close"] == 2503.2
+
+
+@pytest.mark.asyncio
+async def test_api_post_mt5_history(api_client):
+    client, _ = api_client
+    payload = {
+        "symbol": "XAUUSD",
+        "timeframe": "M15",
+        "candles": [
+            {
+                "symbol": "XAUUSD",
+                "timeframe": "M15",
+                "timestamp": "2026-09-06T11:30:00Z",
+                "open": 2495.0,
+                "high": 2500.0,
+                "low": 2492.0,
+                "close": 2499.0,
+                "volume": 800.0,
+            },
+            {
+                "symbol": "XAUUSD",
+                "timeframe": "M15",
+                "timestamp": "2026-09-06T11:45:00Z",
+                "open": 2499.0,
+                "high": 2502.0,
+                "low": 2497.0,
+                "close": 2500.0,
+                "volume": 950.0,
+            },
+        ],
+    }
+    resp = await client.post("/api/market/history", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["count"] == 2
+
